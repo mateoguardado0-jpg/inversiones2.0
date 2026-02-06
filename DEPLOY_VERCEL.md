@@ -44,6 +44,8 @@ git push -u origin main
 
 ### 2.2 Configurar Variables de Entorno
 
+> 📖 **Guía detallada**: Consulta [CONFIGURAR_VERCEL.md](./CONFIGURAR_VERCEL.md) para instrucciones paso a paso con capturas de pantalla.
+
 En la pantalla de configuración del proyecto, agrega las siguientes variables de entorno:
 
 #### Variables Requeridas:
@@ -51,14 +53,17 @@ En la pantalla de configuración del proyecto, agrega las siguientes variables d
 ```
 NEXT_PUBLIC_SUPABASE_URL
 ```
-- **Valor**: Tu URL de Supabase (ej: `https://pkvpnxycunmbpfudzncw.supabase.co`)
+- **Valor**: `https://pkvpnxycunmbpfudzncw.supabase.co`
 - **Tipo**: Plaintext
+- **Environment**: Marca todas (Production, Preview, Development)
 
 ```
 NEXT_PUBLIC_SUPABASE_ANON_KEY
 ```
 - **Valor**: Tu clave anónima de Supabase (la que empieza con `eyJ...`)
+- **Cómo obtenerla**: Ve a Supabase Dashboard → Settings → API → Copia la clave `anon` `public`
 - **Tipo**: Plaintext
+- **Environment**: Marca todas (Production, Preview, Development)
 - **⚠️ Importante**: Esta es la clave `anon` `public`, NO la `service_role`
 
 #### Variables Opcionales:
