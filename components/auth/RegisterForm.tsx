@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -15,12 +15,34 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
  */
 export default function RegisterForm() {
   const router = useRouter()
-  const supabase = createClient()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [configError, setConfigError] = useState<string | null>(null)
+
+  // Verificar configuración al montar
+  useEffect(() => {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      setConfigError('Las variables de entorno de Supabase no están configuradas. Por favor, configura NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY en Vercel.')
+      return
+    }
+
+    if (
+      supabaseAnonKey.includes('your_supabase_anon_key_here') ||
+      supabaseAnonKey.includes('TU_ANON_KEY_AQUI') ||
+      supabaseAnonKey.trim().length < 20
+    ) {
+      setConfigError('La API key de Supabase no está configurada correctamente. Por favor, configura NEXT_PUBLIC_SUPABASE_ANON_KEY en Vercel con tu clave anónima real.')
+      return
+    }
+  }, [])
+
+  const supabase = createClient()
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -115,6 +137,27 @@ export default function RegisterForm() {
       setError(error.message || 'Error al iniciar sesión con Google')
       setLoading(false)
     }
+  }
+
+  // Si hay error de configuración, mostrarlo de forma prominente
+  if (configError) {
+    return (
+      <Card>
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl font-bold text-center text-destructive">
+            Error de Configuración
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-sm text-destructive bg-destructive/10 p-4 rounded-md border border-destructive/20">
+            <p className="font-semibold mb-2">⚠️ {configError}</p>
+            <p className="text-xs mt-2 text-muted-foreground">
+              Si estás desplegando en Vercel, ve a Settings → Environment Variables y agrega las variables necesarias.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    )
   }
 
   return (

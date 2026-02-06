@@ -135,11 +135,21 @@ Después de configurar el dominio:
 
 ## 🐛 Solución de Problemas
 
+### Error: "Application error: a client-side exception has occurred"
+
+Este es el error más común. **Consulta el archivo [SOLUCION_ERROR_CLIENTE.md](./SOLUCION_ERROR_CLIENTE.md) para una guía completa.**
+
+**Solución rápida**:
+1. Verifica que las variables de entorno estén configuradas en Vercel
+2. Asegúrate de usar la clave `anon` `public` (NO `service_role`)
+3. Redesplega la aplicación después de agregar las variables
+
 ### Error: "Las variables de entorno de Supabase no están configuradas"
 
 **Solución**: Verifica que hayas agregado las variables de entorno en Vercel:
 - Ve a **Settings** → **Environment Variables**
 - Asegúrate de que `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY` estén configuradas
+- **Importante**: Marca todas las opciones de Environment (Production, Preview, Development)
 - Reinicia el despliegue después de agregar variables
 
 ### Error: "OAuth callback failed"

@@ -10,8 +10,12 @@ export function createClient() {
 
   // Validar que las variables de entorno estén configuradas
   if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error(
-      'Las variables de entorno de Supabase no están configuradas. Por favor, verifica tu archivo .env.local'
+    console.error('❌ Variables de entorno de Supabase no configuradas')
+    // En lugar de lanzar error, retornar un cliente con valores por defecto
+    // que mostrará errores más amigables en la UI
+    return createBrowserClient(
+      supabaseUrl || 'https://placeholder.supabase.co',
+      supabaseAnonKey || 'placeholder-key'
     )
   }
 
@@ -21,8 +25,11 @@ export function createClient() {
     supabaseAnonKey.includes('TU_ANON_KEY_AQUI') ||
     supabaseAnonKey.trim().length < 20
   ) {
-    throw new Error(
-      'La API key de Supabase no está configurada correctamente. Por favor, configura NEXT_PUBLIC_SUPABASE_ANON_KEY en tu archivo .env.local con tu clave anónima real de Supabase.'
+    console.error('❌ API key de Supabase no configurada correctamente')
+    // Retornar cliente con valores placeholder para evitar crash
+    return createBrowserClient(
+      supabaseUrl,
+      supabaseAnonKey
     )
   }
 
