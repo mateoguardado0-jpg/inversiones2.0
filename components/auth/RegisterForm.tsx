@@ -93,8 +93,8 @@ export default function RegisterForm() {
         }
       }
 
-      // Redirigir al login para que el usuario ingrese sus credenciales
-      router.push('/login?registered=true')
+      // Redirigir a selección de módulo después del registro
+      router.push('/select-module?registered=true')
       router.refresh()
     } catch (error: any) {
       // Mensajes de error más claros

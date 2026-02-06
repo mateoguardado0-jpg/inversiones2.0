@@ -1,14 +1,15 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { User } from '@supabase/supabase-js'
-import { Plus, Edit, Trash2, History, LogOut, Package } from 'lucide-react'
+import { Plus, Edit, Trash2, History, LogOut, Package, Receipt } from 'lucide-react'
 import InventoryHistory from '@/components/inventory/InventoryHistory'
 import AddProductDialog from '@/components/inventory/AddProductDialog'
+import FacturacionContent from '@/components/facturacion/FacturacionContent'
 
 interface Profile {
   id: string
@@ -22,7 +23,7 @@ interface DashboardContentProps {
   profile: Profile | null
 }
 
-type ActiveSection = 'inventario' | 'agregar' | 'editar' | 'eliminar'
+type ActiveSection = 'inventario' | 'agregar' | 'editar' | 'eliminar' | 'facturacion'
 
 /**
  * Contenido del dashboard
@@ -30,10 +31,28 @@ type ActiveSection = 'inventario' | 'agregar' | 'editar' | 'eliminar'
  */
 export default function DashboardContent({ user, profile }: DashboardContentProps) {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const supabase = createClient()
-  const [activeSection, setActiveSection] = useState<ActiveSection>('inventario')
+  
+  // Leer parámetro section de la URL para establecer sección inicial
+  const urlSection = searchParams.get('section')
+  const initialSection: ActiveSection = 
+    urlSection === 'facturacion' ? 'facturacion' :
+    urlSection === 'inventario' ? 'inventario' :
+    'inventario'
+  
+  const [activeSection, setActiveSection] = useState<ActiveSection>(initialSection)
   const [addDialogOpen, setAddDialogOpen] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
+
+  // Actualizar sección cuando cambia el parámetro de URL
+  useEffect(() => {
+    if (urlSection === 'facturacion') {
+      setActiveSection('facturacion')
+    } else if (urlSection === 'inventario') {
+      setActiveSection('inventario')
+    }
+  }, [urlSection])
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -126,6 +145,14 @@ export default function DashboardContent({ user, profile }: DashboardContentProp
                 <Trash2 className="h-4 w-4" />
                 Eliminar Producto
               </Button>
+              <Button
+                variant={activeSection === 'facturacion' ? 'default' : 'outline'}
+                onClick={() => setActiveSection('facturacion')}
+                className="flex items-center gap-2"
+              >
+                <Receipt className="h-4 w-4" />
+                Facturación
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -192,6 +219,12 @@ export default function DashboardContent({ user, profile }: DashboardContentProp
                 </CardHeader>
               </Card>
               <InventoryHistory />
+            </div>
+          )}
+
+          {activeSection === 'facturacion' && (
+            <div key={refreshKey}>
+              <FacturacionContent />
             </div>
           )}
         </div>

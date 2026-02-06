@@ -32,6 +32,7 @@ export async function GET(request: Request) {
 
       // Crear perfil si no existe (para usuarios de OAuth)
       const { data: { user } } = await supabase.auth.getUser()
+      let isNewUser = false
       if (user) {
         const { data: existingProfile } = await supabase
           .from('profiles')
@@ -40,6 +41,7 @@ export async function GET(request: Request) {
           .single()
 
         if (!existingProfile) {
+          isNewUser = true
           const { error: profileError } = await supabase
             .from('profiles')
             .insert([
@@ -57,8 +59,12 @@ export async function GET(request: Request) {
         }
       }
 
-      // Redirigir al dashboard después de la autenticación
-      return NextResponse.redirect(`${origin}/dashboard`)
+      // Redirigir según si es usuario nuevo o existente
+      if (isNewUser) {
+        return NextResponse.redirect(`${origin}/select-module`)
+      } else {
+        return NextResponse.redirect(`${origin}/dashboard`)
+      }
     } catch (error) {
       console.error('Error en callback de OAuth:', error)
       const errorUrl = new URL(`${origin}/login`)
