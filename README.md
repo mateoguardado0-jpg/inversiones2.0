@@ -144,20 +144,63 @@ El sistema incluye tres roles:
 - **user**: Usuario estándar
 - **viewer**: Usuario de solo lectura
 
+## 📦 Gestión de Inventario
+
+El sistema incluye una interfaz completa de gestión de inventario con las siguientes funcionalidades:
+
+### Funcionalidades Implementadas
+
+- ✅ **Historial de Inventario**: Visualización completa de productos y movimientos
+- ✅ **Agregar Productos**: Formulario para agregar nuevos productos al inventario
+- ✅ **Editar Productos**: Modificación de información de productos existentes
+- ✅ **Eliminar Productos**: Eliminación de productos del inventario
+- ✅ **Historial de Movimientos**: Registro automático de todos los cambios (entradas, salidas, ajustes, etc.)
+
+### Configuración de Base de Datos
+
+Después de configurar las tablas de perfiles (ver sección de instalación), ejecuta el siguiente script SQL en el SQL Editor de Supabase:
+
+```bash
+# El archivo inventario-setup.sql contiene todas las tablas y políticas necesarias
+```
+
+O ejecuta directamente el contenido del archivo `inventario-setup.sql` en Supabase.
+
+Este script crea:
+- Tabla `productos`: Almacena todos los productos del inventario
+- Tabla `historial_inventario`: Registra todos los movimientos y cambios
+- Políticas RLS: Protege los datos por usuario
+- Triggers automáticos: Crea registros en el historial cuando se crean, editan o eliminan productos
+
 ## 🚧 Próximas Funcionalidades
 
-- [ ] CRUD completo de inventario
-- [ ] Gestión de productos y categorías
 - [ ] Reportes y análisis
 - [ ] Integración avanzada con IA (Gemini)
 - [ ] Notificaciones en tiempo real
 - [ ] Exportación de datos
+- [ ] Búsqueda y filtros avanzados
+
+## 🚀 Despliegue en Vercel
+
+El proyecto está completamente preparado para desplegarse en Vercel. Para instrucciones detalladas, consulta el archivo [DEPLOY_VERCEL.md](./DEPLOY_VERCEL.md).
+
+### Resumen rápido:
+
+1. **Sube tu código a GitHub**
+2. **Conecta tu repositorio en Vercel**
+3. **Configura las variables de entorno**:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `NEXT_PUBLIC_GEMINI_API_KEY` (opcional)
+4. **Actualiza las URLs de callback en Supabase** con tu dominio de Vercel
+5. **Despliega** - Vercel detectará automáticamente Next.js y desplegará tu aplicación
 
 ## 📝 Notas
 
 - El proyecto está configurado para producción en Vercel
 - Las variables de entorno deben configurarse en Vercel para el despliegue
 - La integración de Gemini está preparada pero no implementada completamente
+- Todas las páginas están configuradas como dinámicas para soportar autenticación
 
 ## 📄 Licencia
 

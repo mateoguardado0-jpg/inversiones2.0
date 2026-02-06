@@ -8,35 +8,65 @@ import { NextResponse } from 'next/server'
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
+  const error = requestUrl.searchParams.get('error')
   const origin = requestUrl.origin
 
+  // Si hay un error en el callback, redirigir al login con mensaje
+  if (error) {
+    const errorUrl = new URL(`${origin}/login`)
+    errorUrl.searchParams.set('error', error)
+    return NextResponse.redirect(errorUrl)
+  }
+
   if (code) {
-    const supabase = await createClient()
-    await supabase.auth.exchangeCodeForSession(code)
+    try {
+      const supabase = await createClient()
+      const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
 
-    // Crear perfil si no existe (para usuarios de OAuth)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (user) {
-      const { data: existingProfile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single()
-
-      if (!existingProfile) {
-        await supabase
-          .from('profiles')
-          .insert([
-            {
-              id: user.id,
-              email: user.email,
-              role: 'user',
-            },
-          ])
+      if (exchangeError) {
+        console.error('Error al intercambiar código por sesión:', exchangeError)
+        const errorUrl = new URL(`${origin}/login`)
+        errorUrl.searchParams.set('error', 'auth_failed')
+        return NextResponse.redirect(errorUrl)
       }
+
+      // Crear perfil si no existe (para usuarios de OAuth)
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: existingProfile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single()
+
+        if (!existingProfile) {
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert([
+              {
+                id: user.id,
+                email: user.email,
+                role: 'user',
+              },
+            ])
+
+          if (profileError) {
+            console.error('Error al crear perfil:', profileError)
+            // Continuar de todas formas, el usuario ya está autenticado
+          }
+        }
+      }
+
+      // Redirigir al dashboard después de la autenticación
+      return NextResponse.redirect(`${origin}/dashboard`)
+    } catch (error) {
+      console.error('Error en callback de OAuth:', error)
+      const errorUrl = new URL(`${origin}/login`)
+      errorUrl.searchParams.set('error', 'auth_failed')
+      return NextResponse.redirect(errorUrl)
     }
   }
 
-  // Redirigir al dashboard después de la autenticación
-  return NextResponse.redirect(`${origin}/dashboard`)
+  // Si no hay código, redirigir al login
+  return NextResponse.redirect(`${origin}/login`)
 }

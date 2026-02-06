@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
@@ -15,11 +15,35 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
  */
 export default function LoginForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const supabase = createClient()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+
+  // Verificar si hay un error o mensaje de éxito en la URL
+  useEffect(() => {
+    const urlError = searchParams.get('error')
+    const registered = searchParams.get('registered')
+    
+    if (urlError) {
+      if (urlError === 'auth_failed') {
+        setError('Error al autenticarse. Por favor, intenta de nuevo.')
+      } else {
+        setError('Ocurrió un error durante la autenticación.')
+      }
+      // Limpiar el parámetro de error de la URL
+      router.replace('/login')
+    }
+    
+    if (registered === 'true') {
+      setSuccessMessage('¡Cuenta creada exitosamente! Por favor, inicia sesión con tus credenciales.')
+      // Limpiar el parámetro de la URL
+      router.replace('/login')
+    }
+  }, [searchParams, router])
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -37,7 +61,16 @@ export default function LoginForm() {
       router.push('/dashboard')
       router.refresh()
     } catch (error: any) {
-      setError(error.message || 'Error al iniciar sesión')
+      // Mensajes de error más claros
+      let errorMessage = error.message || 'Error al iniciar sesión'
+      
+      if (errorMessage.includes('Invalid API key') || errorMessage.includes('JWT')) {
+        errorMessage = 'La API key de Supabase no está configurada correctamente. Por favor, verifica tu archivo .env.local y asegúrate de tener NEXT_PUBLIC_SUPABASE_ANON_KEY configurada con tu clave anónima real.'
+      } else if (errorMessage.includes('variables de entorno')) {
+        errorMessage = 'Las variables de entorno de Supabase no están configuradas. Por favor, crea un archivo .env.local con NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.'
+      }
+      
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }
@@ -55,7 +88,13 @@ export default function LoginForm() {
         },
       })
 
-      if (error) throw error
+      if (error) {
+        // Mensaje más claro para errores de configuración OAuth
+        if (error.message?.includes('missing OAuth secret') || error.message?.includes('validation_failed')) {
+          throw new Error('Google OAuth no está configurado correctamente. Por favor, configura el Client Secret en Supabase Dashboard → Authentication → Providers → Google')
+        }
+        throw error
+      }
     } catch (error: any) {
       setError(error.message || 'Error al iniciar sesión con Google')
       setLoading(false)
@@ -98,6 +137,11 @@ export default function LoginForm() {
               disabled={loading}
             />
           </div>
+          {successMessage && (
+            <div className="text-sm text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 p-3 rounded-md border border-green-200 dark:border-green-800">
+              {successMessage}
+            </div>
+          )}
           {error && (
             <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
               {error}

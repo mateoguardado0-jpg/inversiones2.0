@@ -71,11 +71,22 @@ export default function RegisterForm() {
         }
       }
 
-      // Redirigir al dashboard
-      router.push('/dashboard')
+      // Redirigir al login para que el usuario ingrese sus credenciales
+      router.push('/login?registered=true')
       router.refresh()
     } catch (error: any) {
-      setError(error.message || 'Error al registrar usuario')
+      // Mensajes de error más claros
+      let errorMessage = error.message || 'Error al registrar usuario'
+      
+      if (errorMessage.includes('Invalid API key') || errorMessage.includes('JWT')) {
+        errorMessage = 'La API key de Supabase no está configurada correctamente. Por favor, verifica tu archivo .env.local y asegúrate de tener NEXT_PUBLIC_SUPABASE_ANON_KEY configurada con tu clave anónima real.'
+      } else if (errorMessage.includes('variables de entorno')) {
+        errorMessage = 'Las variables de entorno de Supabase no están configuradas. Por favor, crea un archivo .env.local con NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.'
+      } else if (errorMessage.includes('email rate limit exceeded') || errorMessage.includes('rate limit')) {
+        errorMessage = 'Se ha excedido el límite de envío de emails. Esto puede ocurrir si intentaste registrarte varias veces. Por favor, espera unos minutos e intenta de nuevo, o deshabilita la confirmación de email en la configuración de Supabase.'
+      }
+      
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }
@@ -93,7 +104,13 @@ export default function RegisterForm() {
         },
       })
 
-      if (error) throw error
+      if (error) {
+        // Mensaje más claro para errores de configuración OAuth
+        if (error.message?.includes('missing OAuth secret') || error.message?.includes('validation_failed')) {
+          throw new Error('Google OAuth no está configurado correctamente. Por favor, configura el Client Secret en Supabase Dashboard → Authentication → Providers → Google')
+        }
+        throw error
+      }
     } catch (error: any) {
       setError(error.message || 'Error al iniciar sesión con Google')
       setLoading(false)

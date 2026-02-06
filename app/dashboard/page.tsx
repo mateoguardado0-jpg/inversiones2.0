@@ -2,6 +2,8 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import DashboardContent from '@/components/dashboard/DashboardContent'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * Dashboard principal
  * Solo accesible para usuarios autenticados (protegido por middleware)
