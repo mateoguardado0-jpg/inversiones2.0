@@ -4,11 +4,32 @@ Este documento resume todas las soluciones disponibles para los errores comunes 
 
 ## 🚨 Errores y Sus Soluciones
 
-### 1. Error: "Invalid schema: public"
+### 1. ⚠️ Error: PGRST106 - "Invalid schema: public" (MÁS COMÚN)
+
+**Síntomas**: 
+- Error al intentar agregar productos o cargar historial
+- Mensaje: `Invalid schema: public — Código: PGRST106 — Hint: Only the following schemas are exposed: graphql_public`
+- La API REST de Supabase no puede acceder a las tablas en `public`
+
+**Solución RÁPIDA**:
+1. Ve a **Supabase Dashboard → Settings → API → "Exposed schemas"**
+2. **Agrega `public`** a la lista de schemas expuestos
+3. **Guarda los cambios**
+4. **Recarga la aplicación** (reinicia `npm run dev` y recarga el navegador)
+
+**Guía completa**: Consulta `SOLUCION_PGRST106.md` para instrucciones paso a paso con capturas.
+
+**Archivos relacionados**:
+- `SOLUCION_PGRST106.md` - **Guía completa paso a paso** ⭐
+- `fix-api-rest-406.sql` - Script para permisos (ejecutar DESPUÉS de exponer el schema)
+
+---
+
+### 2. Error: "Invalid schema: public" (versión antigua)
 
 **Síntomas**: 
 - Error al intentar subir artículos
-- Mensaje: "Invalid schema: public"
+- Mensaje: "Invalid schema: public" (sin código PGRST106)
 
 **Solución**:
 1. Ejecuta `fix-schema-public-completo.sql` en Supabase SQL Editor
@@ -23,7 +44,7 @@ Este documento resume todas las soluciones disponibles para los errores comunes 
 
 ---
 
-### 2. Error: 406 (Not Acceptable)
+### 3. Error: 406 (Not Acceptable)
 
 **Síntomas**:
 - Error en consola: "Failed to load resource: the server responded with a status of 406"
@@ -84,14 +105,25 @@ NEXT_PUBLIC_GEMINI_API_KEY=opcional
 - Ve a Supabase Dashboard → Settings → API
 - Copia la clave `anon` `public` (NO `service_role`)
 
-### Paso 2: Ejecutar Scripts SQL
+### Paso 2: Exponer Schema `public` en Supabase ⚠️ IMPORTANTE
+
+**ANTES de ejecutar scripts SQL**, debes exponer el schema `public`:
+
+1. Ve a **Supabase Dashboard → Settings → API**
+2. Busca **"Exposed schemas"** o **"Schemas expuestos"**
+3. **Agrega `public`** a la lista
+4. **Guarda los cambios**
+
+**Guía completa**: Consulta `SOLUCION_PGRST106.md`
+
+### Paso 3: Ejecutar Scripts SQL
 
 1. Ve a Supabase Dashboard → SQL Editor
 2. Ejecuta `supabase-setup.sql`
 3. Ejecuta `inventario-setup.sql`
 4. Si hay errores, ejecuta los scripts de corrección
 
-### Paso 3: Verificar
+### Paso 4: Verificar
 
 1. Reinicia el servidor: `npm run dev`
 2. Inicia sesión en la aplicación
@@ -107,7 +139,8 @@ NEXT_PUBLIC_GEMINI_API_KEY=opcional
 - `ORDEN_EJECUCION_SCRIPTS.md` - Orden correcto de ejecución
 
 ### Soluciones de Errores
-- `SOLUCION_ERROR_SCHEMA.md` - Error "Invalid schema: public"
+- `SOLUCION_PGRST106.md` - **Error PGRST106 (Schema public no expuesto)** ⭐ MÁS COMÚN
+- `SOLUCION_ERROR_SCHEMA.md` - Error "Invalid schema: public" (versión antigua)
 - `SOLUCION_ERROR_406.md` - Error 406 (Not Acceptable)
 - `DIAGNOSTICO_ERROR_SCHEMA.md` - Diagnóstico completo
 
