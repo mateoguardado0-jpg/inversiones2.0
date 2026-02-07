@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Edit, Trash2, Plus } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Edit, Trash2, Plus, Search } from 'lucide-react'
 import EditProductDialog from './EditProductDialog'
 
 interface Product {
@@ -42,6 +43,8 @@ export default function InventoryHistory() {
   const [loading, setLoading] = useState(true)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([])
   const supabase = createClient()
 
   const fetchData = useCallback(async () => {
@@ -87,6 +90,35 @@ export default function InventoryHistory() {
   useEffect(() => {
     fetchData()
   }, [fetchData])
+
+  useEffect(() => {
+    // Filtrar productos con búsqueda inteligente
+    if (searchTerm.length === 0) {
+      setFilteredProducts(products)
+      return
+    }
+
+    const searchLower = searchTerm.toLowerCase()
+    const filtered = products.filter(product => {
+      const nombreMatch = product.nombre.toLowerCase().includes(searchLower)
+      const categoriaMatch = product.categoria?.toLowerCase().includes(searchLower)
+      const codigoMatch = product.codigo_barras?.includes(searchTerm)
+      const descripcionMatch = product.descripcion?.toLowerCase().includes(searchLower)
+      const proveedorMatch = product.proveedor?.toLowerCase().includes(searchLower)
+      const ubicacionMatch = product.ubicacion?.toLowerCase().includes(searchLower)
+      
+      return nombreMatch || categoriaMatch || codigoMatch || descripcionMatch || proveedorMatch || ubicacionMatch
+    })
+
+    // Ordenar por relevancia (nombre que empieza con el término primero)
+    const sorted = filtered.sort((a, b) => {
+      const aStarts = a.nombre.toLowerCase().startsWith(searchLower) ? -1 : 0
+      const bStarts = b.nombre.toLowerCase().startsWith(searchLower) ? -1 : 0
+      return aStarts - bStarts || a.nombre.localeCompare(b.nombre)
+    })
+
+    setFilteredProducts(sorted)
+  }, [searchTerm, products])
 
   const handleDelete = async (productId: string) => {
     if (!confirm('¿Estás seguro de que deseas eliminar este producto?')) {
@@ -173,9 +205,40 @@ export default function InventoryHistory() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {products.length === 0 ? (
+            {/* Búsqueda inteligente */}
+            <div className="mb-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Buscar producto por nombre, categoría, código de barras, proveedor..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+                {searchTerm && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+                    onClick={() => setSearchTerm('')}
+                  >
+                    <span className="text-lg">×</span>
+                  </Button>
+                )}
+              </div>
+              {searchTerm && (
+                <p className="text-sm text-muted-foreground mt-2">
+                  {filteredProducts.length} {filteredProducts.length === 1 ? 'producto encontrado' : 'productos encontrados'}
+                </p>
+              )}
+            </div>
+            {filteredProducts.length === 0 ? (
               <p className="text-center text-muted-foreground py-8">
-                No hay productos en el inventario. Agrega uno para comenzar.
+                {searchTerm 
+                  ? 'No se encontraron productos que coincidan con la búsqueda.'
+                  : 'No hay productos en el inventario. Agrega uno para comenzar.'}
               </p>
             ) : (
               <div className="overflow-x-auto">
@@ -191,7 +254,7 @@ export default function InventoryHistory() {
                     </tr>
                   </thead>
                   <tbody>
-                    {products.map((product) => (
+                    {filteredProducts.map((product) => (
                       <tr key={product.id} className="border-b hover:bg-muted/50">
                         <td className="p-3">
                           <div>

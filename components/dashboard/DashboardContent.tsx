@@ -6,10 +6,11 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { User } from '@supabase/supabase-js'
-import { Plus, Edit, Trash2, History, LogOut, Package, Receipt } from 'lucide-react'
+import { Plus, Edit, Trash2, History, LogOut, Package, Receipt, TrendingUp } from 'lucide-react'
 import InventoryHistory from '@/components/inventory/InventoryHistory'
 import AddProductDialog from '@/components/inventory/AddProductDialog'
 import FacturacionContent from '@/components/facturacion/FacturacionContent'
+import SalesReport from '@/components/facturacion/SalesReport'
 
 interface Profile {
   id: string
@@ -23,7 +24,7 @@ interface DashboardContentProps {
   profile: Profile | null
 }
 
-type ActiveSection = 'inventario' | 'agregar' | 'editar' | 'eliminar' | 'facturacion'
+type ActiveSection = 'inventario' | 'agregar' | 'editar' | 'eliminar' | 'facturacion' | 'ventas'
 
 /**
  * Contenido del dashboard
@@ -39,6 +40,7 @@ export default function DashboardContent({ user, profile }: DashboardContentProp
   const initialSection: ActiveSection = 
     urlSection === 'facturacion' ? 'facturacion' :
     urlSection === 'inventario' ? 'inventario' :
+    urlSection === 'ventas' ? 'ventas' :
     'inventario'
   
   const [activeSection, setActiveSection] = useState<ActiveSection>(initialSection)
@@ -51,6 +53,8 @@ export default function DashboardContent({ user, profile }: DashboardContentProp
       setActiveSection('facturacion')
     } else if (urlSection === 'inventario') {
       setActiveSection('inventario')
+    } else if (urlSection === 'ventas') {
+      setActiveSection('ventas')
     }
   }, [urlSection])
 
@@ -153,6 +157,14 @@ export default function DashboardContent({ user, profile }: DashboardContentProp
                 <Receipt className="h-4 w-4" />
                 Facturación
               </Button>
+              <Button
+                variant={activeSection === 'ventas' ? 'default' : 'outline'}
+                onClick={() => setActiveSection('ventas')}
+                className="flex items-center gap-2"
+              >
+                <TrendingUp className="h-4 w-4" />
+                Reporte de Ventas
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -225,6 +237,12 @@ export default function DashboardContent({ user, profile }: DashboardContentProp
           {activeSection === 'facturacion' && (
             <div key={refreshKey}>
               <FacturacionContent />
+            </div>
+          )}
+
+          {activeSection === 'ventas' && (
+            <div key={refreshKey}>
+              <SalesReport />
             </div>
           )}
         </div>

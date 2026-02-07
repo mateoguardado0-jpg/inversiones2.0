@@ -4,8 +4,9 @@ import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Plus, Receipt, Eye } from 'lucide-react'
+import { Plus, Receipt, Printer } from 'lucide-react'
 import CreateInvoiceDialog from './CreateInvoiceDialog'
+import InvoicePrintView from './InvoicePrintView'
 
 interface Invoice {
   id: string
@@ -40,6 +41,7 @@ export default function FacturacionContent() {
   const [invoices, setInvoices] = useState<InvoiceWithItems[]>([])
   const [loading, setLoading] = useState(true)
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
+  const [printInvoice, setPrintInvoice] = useState<InvoiceWithItems | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
   const supabase = createClient()
 
@@ -195,6 +197,17 @@ export default function FacturacionContent() {
                   </div>
                 </CardHeader>
                 <CardContent>
+                  <div className="flex justify-end gap-2 mb-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPrintInvoice(invoice)}
+                      className="flex items-center gap-2"
+                    >
+                      <Printer className="h-4 w-4" />
+                      Imprimir
+                    </Button>
+                  </div>
                   <div className="space-y-2">
                     <div className="text-sm font-medium mb-2">Productos:</div>
                     <div className="space-y-1">
@@ -234,6 +247,15 @@ export default function FacturacionContent() {
         onOpenChange={setCreateDialogOpen}
         onInvoiceCreated={handleInvoiceCreated}
       />
+
+      {/* Vista de impresión */}
+      {printInvoice && (
+        <InvoicePrintView
+          invoice={printInvoice}
+          invoiceNumber={formatInvoiceNumber(printInvoice.id)}
+          onClose={() => setPrintInvoice(null)}
+        />
+      )}
     </>
   )
 }
