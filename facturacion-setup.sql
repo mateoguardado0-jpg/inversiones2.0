@@ -3,16 +3,16 @@
 -- Ejecutar en el SQL Editor de Supabase
 -- ============================================
 
--- Crear tabla de facturas
-CREATE TABLE IF NOT EXISTS facturas (
+-- Crear tabla de facturas en schema public
+CREATE TABLE IF NOT EXISTS public.facturas (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
   total DECIMAL(10, 2) NOT NULL DEFAULT 0,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL
 );
 
--- Crear tabla de items de factura
-CREATE TABLE IF NOT EXISTS factura_items (
+-- Crear tabla de items de factura en schema public
+CREATE TABLE IF NOT EXISTS public.factura_items (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   factura_id UUID REFERENCES facturas(id) ON DELETE CASCADE NOT NULL,
   producto_id UUID REFERENCES productos(id) ON DELETE CASCADE NOT NULL,
@@ -23,27 +23,33 @@ CREATE TABLE IF NOT EXISTS factura_items (
 );
 
 -- Habilitar Row Level Security (RLS)
-ALTER TABLE facturas ENABLE ROW LEVEL SECURITY;
-ALTER TABLE factura_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.facturas ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.factura_items ENABLE ROW LEVEL SECURITY;
+
+-- Eliminar políticas existentes si existen (para evitar duplicados)
+DROP POLICY IF EXISTS "Users can read own invoices" ON public.facturas;
+DROP POLICY IF EXISTS "Users can insert own invoices" ON public.facturas;
+DROP POLICY IF EXISTS "Users can read own invoice items" ON public.factura_items;
+DROP POLICY IF EXISTS "Users can insert own invoice items" ON public.factura_items;
 
 -- Políticas para facturas
 -- Los usuarios pueden leer sus propias facturas
 CREATE POLICY "Users can read own invoices"
-  ON facturas FOR SELECT
+  ON public.facturas FOR SELECT
   USING (auth.uid() = user_id);
 
 -- Los usuarios pueden insertar sus propias facturas
 CREATE POLICY "Users can insert own invoices"
-  ON facturas FOR INSERT
+  ON public.facturas FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
 -- Políticas para factura_items
 -- Los usuarios pueden leer items de sus propias facturas
 CREATE POLICY "Users can read own invoice items"
-  ON factura_items FOR SELECT
+  ON public.factura_items FOR SELECT
   USING (
     EXISTS (
-      SELECT 1 FROM facturas
+      SELECT 1 FROM public.facturas
       WHERE facturas.id = factura_items.factura_id
       AND facturas.user_id = auth.uid()
     )
@@ -51,20 +57,20 @@ CREATE POLICY "Users can read own invoice items"
 
 -- Los usuarios pueden insertar items en sus propias facturas
 CREATE POLICY "Users can insert own invoice items"
-  ON factura_items FOR INSERT
+  ON public.factura_items FOR INSERT
   WITH CHECK (
     EXISTS (
-      SELECT 1 FROM facturas
+      SELECT 1 FROM public.facturas
       WHERE facturas.id = factura_items.factura_id
       AND facturas.user_id = auth.uid()
     )
   );
 
 -- Índices para mejorar el rendimiento
-CREATE INDEX IF NOT EXISTS facturas_user_id_idx ON facturas(user_id);
-CREATE INDEX IF NOT EXISTS facturas_created_at_idx ON facturas(created_at DESC);
-CREATE INDEX IF NOT EXISTS factura_items_factura_id_idx ON factura_items(factura_id);
-CREATE INDEX IF NOT EXISTS factura_items_producto_id_idx ON factura_items(producto_id);
+CREATE INDEX IF NOT EXISTS facturas_user_id_idx ON public.facturas(user_id);
+CREATE INDEX IF NOT EXISTS facturas_created_at_idx ON public.facturas(created_at DESC);
+CREATE INDEX IF NOT EXISTS factura_items_factura_id_idx ON public.factura_items(factura_id);
+CREATE INDEX IF NOT EXISTS factura_items_producto_id_idx ON public.factura_items(producto_id);
 
 -- Función transaccional para crear factura
 -- Esta función valida stock, crea la factura, items, descuenta inventario y registra historial
@@ -93,7 +99,7 @@ BEGIN
     -- Obtener información del producto
     SELECT id, cantidad, precio, estado, nombre
     INTO v_producto
-    FROM productos
+    FROM public.productos
     WHERE id = (v_item->>'producto_id')::UUID
     AND user_id = p_user_id;
 
@@ -122,7 +128,7 @@ BEGIN
   END LOOP;
 
   -- Si llegamos aquí, todo está validado. Crear la factura
-  INSERT INTO facturas (user_id, total)
+  INSERT INTO public.facturas (user_id, total)
   VALUES (p_user_id, 0)
   RETURNING id INTO v_factura_id;
 
@@ -131,7 +137,7 @@ BEGIN
   LOOP
     -- Obtener precio del producto
     SELECT precio INTO v_precio_producto
-    FROM productos
+    FROM public.productos
     WHERE id = (v_item->>'producto_id')::UUID;
 
     -- Calcular subtotal
@@ -139,7 +145,7 @@ BEGIN
     v_total := v_total + v_subtotal;
 
     -- Insertar item de factura
-    INSERT INTO factura_items (
+    INSERT INTO public.factura_items (
       factura_id,
       producto_id,
       cantidad,
@@ -154,14 +160,14 @@ BEGIN
     );
 
     -- Descontar stock del producto
-    UPDATE productos
+    UPDATE public.productos
     SET cantidad = cantidad - (v_item->>'cantidad')::INTEGER,
         updated_at = TIMEZONE('utc', NOW())
     WHERE id = (v_item->>'producto_id')::UUID
     AND user_id = p_user_id;
 
     -- Registrar en historial de inventario
-    INSERT INTO historial_inventario (
+    INSERT INTO public.historial_inventario (
       producto_id,
       tipo_movimiento,
       cantidad_anterior,
@@ -178,12 +184,12 @@ BEGIN
       -(v_item->>'cantidad')::INTEGER,
       format('Venta - Factura %s', v_factura_id),
       p_user_id
-    FROM productos
+    FROM public.productos
     WHERE id = (v_item->>'producto_id')::UUID;
   END LOOP;
 
   -- Actualizar total de la factura
-  UPDATE facturas
+  UPDATE public.facturas
   SET total = v_total
   WHERE id = v_factura_id;
 
@@ -191,3 +197,14 @@ BEGIN
   RETURN QUERY SELECT v_factura_id, v_total, NULL::TEXT;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Otorgar permisos para ejecutar la función
+GRANT EXECUTE ON FUNCTION crear_factura(UUID, JSONB) TO anon, authenticated, service_role;
+
+-- Otorgar permisos en las tablas
+GRANT ALL ON public.facturas TO anon, authenticated, service_role;
+GRANT ALL ON public.factura_items TO anon, authenticated, service_role;
+
+-- Asegurar que las tablas están en el schema public
+ALTER TABLE IF EXISTS facturas SET SCHEMA public;
+ALTER TABLE IF EXISTS factura_items SET SCHEMA public;

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { formatSupabaseError, getSupabaseActionHint } from '@/lib/supabase/error'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -215,35 +216,57 @@ export default function CreateInvoiceDialog({
         throw new Error('Usuario no autenticado')
       }
 
+      // Convertir items a formato JSONB para la función
       const invoiceItems = items.map(item => ({
         producto_id: item.producto.id,
         cantidad: item.cantidad,
       }))
 
+      console.log('Creando factura con items:', invoiceItems)
+
       const { data, error: functionError } = await supabase.rpc('crear_factura', {
         p_user_id: user.id,
-        p_items: invoiceItems,
+        p_items: invoiceItems as any, // Supabase convierte automáticamente a JSONB
       })
 
-      if (functionError) throw functionError
+      if (functionError) {
+        console.error('Error en RPC crear_factura:', functionError)
+        const formattedError = formatSupabaseError(functionError)
+        throw new Error(formattedError.message)
+      }
 
-      if (data && data.length > 0 && data[0].error_message) {
+      console.log('Respuesta de crear_factura:', data)
+
+      if (!data || data.length === 0) {
+        throw new Error('No se recibió respuesta del servidor al crear la factura')
+      }
+
+      if (data[0].error_message) {
         throw new Error(data[0].error_message)
       }
 
       // Guardar ID de factura creada para mostrar preview
-      if (data && data.length > 0 && data[0].factura_id) {
+      if (data[0].factura_id) {
         setCreatedInvoiceId(data[0].factura_id)
         setShowPreview(true)
+        // Mostrar mensaje de éxito
+        setError(null)
+        console.log('Factura creada exitosamente:', data[0].factura_id)
       } else {
-        setItems([])
-        setSearchTerm('')
-        onInvoiceCreated()
-        onOpenChange(false)
+        throw new Error('No se recibió el ID de la factura creada')
       }
     } catch (err: any) {
-      setError(err.message || 'Error al crear la factura')
-      setTimeout(() => setError(null), 5000)
+      console.error('Error completo al crear factura:', err)
+      let errorMessage = err.message || 'Error al crear la factura'
+      
+      // Agregar hint si existe
+      const hint = getSupabaseActionHint(err)
+      if (hint) {
+        errorMessage += `\n\n💡 ${hint}`
+      }
+      
+      setError(errorMessage)
+      setTimeout(() => setError(null), 10000)
     } finally {
       setLoading(false)
     }
@@ -302,7 +325,7 @@ export default function CreateInvoiceDialog({
                 autoFocus={true}
               />
               {error && (
-                <div className="mt-2 p-2 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400 rounded-md">
+                <div className="mt-2 p-3 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400 rounded-md whitespace-pre-line">
                   {error}
                 </div>
               )}
