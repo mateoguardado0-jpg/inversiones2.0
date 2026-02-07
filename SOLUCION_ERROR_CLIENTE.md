@@ -158,7 +158,25 @@ Con las mejoras implementadas, ahora:
 - ✅ Se muestran mensajes de error claros y útiles
 - ✅ El ErrorBoundary captura errores inesperados
 - ✅ Los componentes validan la configuración antes de usarla
+- ✅ `createClient()` tiene manejo de errores robusto con try-catch
+- ✅ El cliente de Supabase retorna un cliente placeholder en lugar de lanzar errores
+- ✅ Los componentes llaman `createClient()` dentro de funciones, no al nivel superior
+- ✅ Los componentes del servidor tienen manejo de errores para evitar crashes
+
+### Cambios Técnicos Recientes
+
+1. **`lib/supabase/client.ts`**:
+   - Agregado try-catch para prevenir crashes
+   - Retorna cliente placeholder si hay errores
+   - Valida variables de entorno de forma segura
+
+2. **Componentes de Autenticación**:
+   - `LoginForm` y `RegisterForm` ahora llaman `createClient()` dentro de los handlers
+   - Validación de configuración en `useEffect` antes de usar el cliente
+
+3. **Componentes del Servidor**:
+   - Agregado try-catch en `app/dashboard/page.tsx` para manejar errores del servidor
 
 ---
 
-**Última actualización**: Después de implementar estas mejoras, el error debería mostrarse de forma más amigable y guiar al usuario sobre cómo solucionarlo.
+**Última actualización**: Se mejoró el manejo de errores en el cliente de Supabase para prevenir crashes cuando las variables de entorno no están configuradas. La aplicación ahora muestra mensajes de error amigables en lugar de romperse.

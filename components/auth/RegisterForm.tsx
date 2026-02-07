@@ -42,8 +42,6 @@ export default function RegisterForm() {
     }
   }, [])
 
-  const supabase = createClient()
-
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -64,6 +62,7 @@ export default function RegisterForm() {
     }
 
     try {
+      const supabase = createClient()
       // Registrar usuario en Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
@@ -119,6 +118,7 @@ export default function RegisterForm() {
     setError(null)
 
     try {
+      const supabase = createClient()
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {

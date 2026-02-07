@@ -43,8 +43,6 @@ export default function LoginForm() {
     }
   }, [])
 
-  const supabase = createClient()
-
   // Verificar si hay un error o mensaje de éxito en la URL
   useEffect(() => {
     const urlError = searchParams.get('error')
@@ -73,6 +71,7 @@ export default function LoginForm() {
     setError(null)
 
     try {
+      const supabase = createClient()
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -103,6 +102,7 @@ export default function LoginForm() {
     setError(null)
 
     try {
+      const supabase = createClient()
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
