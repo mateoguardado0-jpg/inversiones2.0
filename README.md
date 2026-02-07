@@ -42,50 +42,25 @@ Sistema web de gestión de inventario online construido con Next.js, Supabase y 
 
 4. **Configurar base de datos en Supabase**
 
-   Ejecutar el siguiente SQL en el SQL Editor de Supabase:
+   ⚠️ **IMPORTANTE**: Ejecuta los scripts SQL en el siguiente orden:
 
-   ```sql
-   -- Crear tabla de perfiles
-   CREATE TABLE IF NOT EXISTS profiles (
-     id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
-     email TEXT NOT NULL,
-     role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('admin', 'user', 'viewer')),
-     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL
-   );
+   **Paso 4.1: Configurar perfiles de usuario**
+   
+   Ejecuta el contenido del archivo `supabase-setup.sql` en el SQL Editor de Supabase:
+   - Ve a Supabase Dashboard → SQL Editor → New query
+   - Copia y pega el contenido completo de `supabase-setup.sql`
+   - Haz clic en **Run** (o presiona `Ctrl + Enter`)
 
-   -- Habilitar RLS (Row Level Security)
-   ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+   **Paso 4.2: Configurar tablas de inventario**
+   
+   Ejecuta el contenido del archivo `inventario-setup.sql` en el SQL Editor de Supabase:
+   - En el mismo SQL Editor, crea una nueva query
+   - Copia y pega el contenido completo de `inventario-setup.sql`
+   - Haz clic en **Run**
 
-   -- Política: Los usuarios pueden leer su propio perfil
-   CREATE POLICY "Users can read own profile"
-     ON profiles FOR SELECT
-     USING (auth.uid() = id);
-
-   -- Política: Los usuarios pueden actualizar su propio perfil
-   CREATE POLICY "Users can update own profile"
-     ON profiles FOR UPDATE
-     USING (auth.uid() = id);
-
-   -- Política: Los usuarios pueden insertar su propio perfil
-   CREATE POLICY "Users can insert own profile"
-     ON profiles FOR INSERT
-     WITH CHECK (auth.uid() = id);
-
-   -- Función para crear perfil automáticamente al registrarse
-   CREATE OR REPLACE FUNCTION public.handle_new_user()
-   RETURNS TRIGGER AS $$
-   BEGIN
-     INSERT INTO public.profiles (id, email, role)
-     VALUES (NEW.id, NEW.email, 'user');
-     RETURN NEW;
-   END;
-   $$ LANGUAGE plpgsql SECURITY DEFINER;
-
-   -- Trigger para crear perfil cuando se crea un usuario
-   CREATE TRIGGER on_auth_user_created
-     AFTER INSERT ON auth.users
-     FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
-   ```
+   ⚠️ **Si encuentras el error "Invalid schema: public"**:
+   - Ejecuta el archivo `fix-schema-public.sql` en el SQL Editor
+   - Consulta `SOLUCION_ERROR_SCHEMA.md` para más detalles
 
 5. **Configurar Google OAuth en Supabase**
 
@@ -158,13 +133,22 @@ El sistema incluye una interfaz completa de gestión de inventario con las sigui
 
 ### Configuración de Base de Datos
 
-Después de configurar las tablas de perfiles (ver sección de instalación), ejecuta el siguiente script SQL en el SQL Editor de Supabase:
+**Orden de ejecución de scripts SQL:**
 
-```bash
-# El archivo inventario-setup.sql contiene todas las tablas y políticas necesarias
-```
+1. **Primero**: Ejecuta `supabase-setup.sql` para crear las tablas de perfiles
+2. **Segundo**: Ejecuta `inventario-setup.sql` para crear las tablas de inventario
+3. **Si hay problemas**: Ejecuta `fix-schema-public.sql` para corregir el esquema
 
-O ejecuta directamente el contenido del archivo `inventario-setup.sql` en Supabase.
+Todos los scripts deben ejecutarse en el SQL Editor de Supabase (Dashboard → SQL Editor).
+
+**Archivos SQL disponibles:**
+- `supabase-setup.sql`: Configuración inicial de perfiles de usuario
+- `inventario-setup.sql`: Tablas de productos e historial de inventario
+- `fix-schema-public.sql`: Corrección del error "Invalid schema: public"
+
+**Solución de problemas:**
+- Si encuentras el error "Invalid schema: public", consulta `SOLUCION_ERROR_SCHEMA.md`
+- Verifica que las variables de entorno estén configuradas correctamente en `.env.local`
 
 Este script crea:
 - Tabla `productos`: Almacena todos los productos del inventario
