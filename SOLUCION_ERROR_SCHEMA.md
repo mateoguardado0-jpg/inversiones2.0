@@ -16,12 +16,20 @@ Este error ocurre cuando:
 
 ### Paso 1: Ejecutar el script de corrección
 
+**Opción A: Script Completo (Recomendado si el error persiste)**
+
 1. Ve a tu proyecto en [Supabase Dashboard](https://app.supabase.com)
 2. Selecciona tu proyecto
 3. Ve a **SQL Editor** (en el menú lateral)
 4. Haz clic en **New query**
-5. Copia y pega el contenido completo del archivo `fix-schema-public.sql`
+5. Copia y pega el contenido completo del archivo `fix-schema-public-completo.sql`
 6. Haz clic en **Run** (o presiona `Ctrl + Enter`)
+
+Este script es más completo y corrige todos los problemas posibles.
+
+**Opción B: Script Básico**
+
+Si prefieres el script básico, usa `fix-schema-public.sql` siguiendo los mismos pasos.
 
 ### Paso 2: Verificar que se ejecutó correctamente
 
@@ -75,6 +83,18 @@ Deberías ver las políticas listadas.
 
 ## Si el problema persiste
 
+Si el error persiste después de ejecutar los scripts, sigue estos pasos:
+
+### 1. Ejecuta el Script Completo
+
+Ejecuta `fix-schema-public-completo.sql` que es más agresivo y corrige todos los problemas posibles.
+
+### 2. Sigue la Guía de Diagnóstico
+
+Consulta `DIAGNOSTICO_ERROR_SCHEMA.md` para un diagnóstico paso a paso que te ayudará a identificar exactamente dónde está el problema.
+
+### 3. Verificaciones Adicionales
+
 1. **Verifica tu conexión a Supabase**:
    - Asegúrate de que `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY` estén correctamente configurados en `.env.local`
    - Reinicia el servidor de desarrollo después de cambiar las variables de entorno
@@ -88,9 +108,14 @@ Deberías ver las políticas listadas.
    - Ve a la pestaña "Console"
    - Busca errores adicionales que puedan dar más contexto
 
-4. **Contacta con soporte**:
+4. **Limpia la caché**:
+   - Limpia la caché del navegador (Ctrl + Shift + Delete)
+   - O prueba en modo incógnito
+
+5. **Contacta con soporte**:
    - Si nada de lo anterior funciona, puede ser un problema específico de tu proyecto de Supabase
    - Revisa los logs en Supabase Dashboard → Logs → Postgres Logs
+   - Proporciona los resultados del diagnóstico de `DIAGNOSTICO_ERROR_SCHEMA.md`
 
 ## Prevención
 
@@ -102,6 +127,8 @@ Para evitar este problema en el futuro:
 
 ## Documentación Relacionada
 
+- `fix-schema-public-completo.sql`: Script completo y más agresivo para corregir el error
+- `DIAGNOSTICO_ERROR_SCHEMA.md`: Guía paso a paso para diagnosticar el problema
 - `ORDEN_EJECUCION_SCRIPTS.md`: Guía completa sobre el orden de ejecución de scripts
 - `INSTRUCCIONES_CONFIGURACION.md`: Instrucciones generales de configuración
 - `README.md`: Documentación principal del proyecto

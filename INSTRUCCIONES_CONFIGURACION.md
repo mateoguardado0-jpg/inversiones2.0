@@ -86,9 +86,11 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key_here
 
 **"Invalid schema: public" al subir artículos**
 - Este error indica que el esquema `public` no está correctamente configurado en Supabase
-- **Solución**: Ejecuta el script `fix-schema-public.sql` en el SQL Editor de Supabase
+- **Solución Rápida**: Ejecuta el script `fix-schema-public-completo.sql` en el SQL Editor de Supabase
   1. Ve a Supabase Dashboard → SQL Editor
-  2. Copia y pega el contenido de `fix-schema-public.sql`
+  2. Copia y pega el contenido de `fix-schema-public-completo.sql`
   3. Haz clic en "Run"
-  4. Vuelve a intentar subir el artículo
+  4. Espera a ver el mensaje de verificación final
+  5. Vuelve a intentar subir el artículo
+- **Si el error persiste**: Consulta `DIAGNOSTICO_ERROR_SCHEMA.md` para diagnóstico paso a paso
 - Para más detalles, consulta `SOLUCION_ERROR_SCHEMA.md`
