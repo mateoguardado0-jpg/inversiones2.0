@@ -7,9 +7,10 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { User } from '@supabase/supabase-js'
-import { Plus, Edit, Trash2, History, LogOut, Package, Receipt, TrendingUp, Menu } from 'lucide-react'
+import { Plus, Edit, Trash2, History, LogOut, Package, Receipt, TrendingUp, Menu, Sparkles } from 'lucide-react'
 import InventoryHistory from '@/components/inventory/InventoryHistory'
 import AddProductDialog from '@/components/inventory/AddProductDialog'
+import SmartImportContent from '@/components/inventory/SmartImportContent'
 import FacturacionContent from '@/components/facturacion/FacturacionContent'
 import SalesReport from '@/components/facturacion/SalesReport'
 
@@ -25,7 +26,7 @@ interface DashboardContentProps {
   profile: Profile | null
 }
 
-type ActiveSection = 'inventario' | 'agregar' | 'editar' | 'eliminar' | 'facturacion' | 'ventas'
+type ActiveSection = 'inventario' | 'agregar' | 'editar' | 'eliminar' | 'facturacion' | 'ventas' | 'ingreso-inteligente'
 
 /**
  * Contenido del dashboard
@@ -42,6 +43,7 @@ export default function DashboardContent({ user, profile }: DashboardContentProp
     urlSection === 'facturacion' ? 'facturacion' :
     urlSection === 'inventario' ? 'inventario' :
     urlSection === 'ventas' ? 'ventas' :
+    urlSection === 'ingreso-inteligente' ? 'ingreso-inteligente' :
     'inventario'
   
   const [activeSection, setActiveSection] = useState<ActiveSection>(initialSection)
@@ -57,6 +59,8 @@ export default function DashboardContent({ user, profile }: DashboardContentProp
       setActiveSection('inventario')
     } else if (urlSection === 'ventas') {
       setActiveSection('ventas')
+    } else if (urlSection === 'ingreso-inteligente') {
+      setActiveSection('ingreso-inteligente')
     }
   }, [urlSection])
 
@@ -193,6 +197,17 @@ export default function DashboardContent({ user, profile }: DashboardContentProp
                   <TrendingUp className="h-4 w-4" />
                   Reporte de Ventas
                 </Button>
+                <Button
+                  variant={activeSection === 'ingreso-inteligente' ? 'default' : 'outline'}
+                  onClick={() => {
+                    setActiveSection('ingreso-inteligente')
+                    setMenuOpen(false)
+                  }}
+                  className="w-full justify-start flex items-center gap-2"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  Ingreso Inteligente
+                </Button>
               </div>
             </SheetContent>
           </Sheet>
@@ -272,6 +287,12 @@ export default function DashboardContent({ user, profile }: DashboardContentProp
           {activeSection === 'ventas' && (
             <div key={refreshKey}>
               <SalesReport />
+            </div>
+          )}
+
+          {activeSection === 'ingreso-inteligente' && (
+            <div key={refreshKey}>
+              <SmartImportContent />
             </div>
           )}
         </div>
