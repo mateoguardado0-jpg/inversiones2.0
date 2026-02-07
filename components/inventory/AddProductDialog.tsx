@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { formatSupabaseError, getSupabaseActionHint } from '@/lib/supabase/error'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -92,7 +93,9 @@ export default function AddProductDialog({
       onProductAdded()
       onOpenChange(false)
     } catch (err: any) {
-      setError(err.message || 'Error al agregar producto')
+      const hint = getSupabaseActionHint(err)
+      const msg = formatSupabaseError(err) || 'Error al agregar producto'
+      setError(hint ? `${msg}\n\n${hint}` : msg)
     } finally {
       setLoading(false)
     }
@@ -110,7 +113,7 @@ export default function AddProductDialog({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
-            <div className="p-3 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400 rounded-md">
+            <div className="p-3 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400 rounded-md whitespace-pre-wrap">
               {error}
             </div>
           )}

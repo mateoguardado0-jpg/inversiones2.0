@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { formatSupabaseError, getSupabaseActionHint } from '@/lib/supabase/error'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -169,7 +170,9 @@ export default function SmartImportContent() {
 
           if (updateError) {
             console.error(`Error al actualizar producto ${product.nombre}:`, updateError)
-            throw new Error(`Error al actualizar producto ${product.nombre}`)
+            throw new Error(
+              `Error al actualizar producto ${product.nombre}: ${formatSupabaseError(updateError)}`
+            )
           }
 
           updatedCount++
@@ -195,7 +198,9 @@ export default function SmartImportContent() {
 
           if (insertError) {
             console.error(`Error al crear producto ${product.nombre}:`, insertError)
-            throw new Error(`Error al crear producto ${product.nombre}`)
+            throw new Error(
+              `Error al crear producto ${product.nombre}: ${formatSupabaseError(insertError)}`
+            )
           }
 
           createdCount++
@@ -216,7 +221,9 @@ export default function SmartImportContent() {
       // Recargar la página para actualizar el inventario
       window.location.reload()
     } catch (err: any) {
-      setError(err.message || 'Error al guardar productos')
+      const hint = getSupabaseActionHint(err)
+      const msg = formatSupabaseError(err) || err.message || 'Error al guardar productos'
+      setError(hint ? `${msg}\n\n${hint}` : msg)
       console.error('Error en handleSaveAll:', err)
     } finally {
       setSaving(false)
@@ -282,7 +289,7 @@ export default function SmartImportContent() {
 
           {/* Mensaje de error */}
           {error && (
-            <div className="p-3 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400 rounded-md flex items-center gap-2">
+            <div className="p-3 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400 rounded-md flex items-center gap-2 whitespace-pre-wrap">
               <XCircle className="h-4 w-4" />
               {error}
             </div>

@@ -2,6 +2,12 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import {
+  formatSupabaseError,
+  getSupabaseActionHint,
+  normalizeSupabaseError,
+  type NormalizedSupabaseError,
+} from '@/lib/supabase/error'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -42,6 +48,8 @@ export default function InventoryHistory() {
   const [products, setProducts] = useState<Product[]>([])
   const [history, setHistory] = useState<InventoryHistoryItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<NormalizedSupabaseError | null>(null)
+  const [loadErrorHint, setLoadErrorHint] = useState<string | null>(null)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
@@ -50,6 +58,8 @@ export default function InventoryHistory() {
 
   const fetchData = useCallback(async () => {
     try {
+      setLoadError(null)
+      setLoadErrorHint(null)
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
@@ -82,7 +92,10 @@ export default function InventoryHistory() {
       if (historyError) throw historyError
       setHistory(historyData || [])
     } catch (error) {
-      console.error('Error al cargar datos:', error)
+      const normalized = normalizeSupabaseError(error)
+      setLoadError(normalized)
+      setLoadErrorHint(getSupabaseActionHint(error))
+      console.error('Error al cargar datos:', normalized)
     } finally {
       setLoading(false)
     }
@@ -225,6 +238,44 @@ export default function InventoryHistory() {
   return (
     <>
       <div className="space-y-6">
+        {loadError && (
+          <Card className="border-destructive/40">
+            <CardHeader>
+              <CardTitle className="text-destructive flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5" />
+                Error al cargar inventario
+              </CardTitle>
+              <CardDescription>
+                No se pudieron leer datos desde Supabase. Si en Network ves 404/406, normalmente es tabla no expuesta o permisos/RLS.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {loadErrorHint && (
+                <div className="text-sm bg-muted/60 p-3 rounded-md">
+                  <p className="font-medium mb-1">Sugerencia:</p>
+                  <p className="text-muted-foreground">{loadErrorHint}</p>
+                </div>
+              )}
+              <div className="text-xs font-mono break-all bg-muted p-3 rounded-md">
+                {formatSupabaseError(loadError.raw ?? loadError)}
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => fetchData()}>
+                  Reintentar
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    const text = formatSupabaseError(loadError.raw ?? loadError)
+                    navigator.clipboard?.writeText(text).catch(() => {})
+                  }}
+                >
+                  Copiar error
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
         {/* Tabla de Productos */}
         <Card>
           <CardHeader>
