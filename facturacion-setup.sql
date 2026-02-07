@@ -91,22 +91,23 @@ DECLARE
   v_stock_disponible INTEGER;
   v_subtotal DECIMAL(10, 2);
   v_precio_producto DECIMAL(10, 2);
-  v_error TEXT;
 BEGIN
   -- Validar que todos los productos tengan stock suficiente
-  FOR v_item IN SELECT * FROM jsonb_array_elements(p_items) AS item
+  FOR v_item IN
+    SELECT *
+    FROM jsonb_to_recordset(p_items) AS x(producto_id UUID, cantidad INTEGER)
   LOOP
     -- Obtener información del producto
     SELECT id, cantidad, precio, estado, nombre
     INTO v_producto
     FROM public.productos
-    WHERE id = (v_item->>'producto_id')::UUID
+    WHERE id = v_item.producto_id
     AND user_id = p_user_id;
 
     -- Verificar que el producto existe
     IF v_producto IS NULL THEN
       RETURN QUERY SELECT NULL::UUID, 0::DECIMAL, 
-        format('Producto con ID %s no encontrado', v_item->>'producto_id')::TEXT;
+        format('Producto con ID %s no encontrado', v_item.producto_id)::TEXT;
       RETURN;
     END IF;
 
@@ -119,10 +120,10 @@ BEGIN
 
     -- Verificar stock disponible
     v_stock_disponible := v_producto.cantidad;
-    IF v_stock_disponible < (v_item->>'cantidad')::INTEGER THEN
+    IF v_stock_disponible < v_item.cantidad THEN
       RETURN QUERY SELECT NULL::UUID, 0::DECIMAL, 
         format('Stock insuficiente para %s. Disponible: %s, Solicitado: %s', 
-          v_producto.nombre, v_stock_disponible, (v_item->>'cantidad')::INTEGER)::TEXT;
+          v_producto.nombre, v_stock_disponible, v_item.cantidad)::TEXT;
       RETURN;
     END IF;
   END LOOP;
@@ -133,15 +134,17 @@ BEGIN
   RETURNING id INTO v_factura_id;
 
   -- Crear items y calcular total
-  FOR v_item IN SELECT * FROM jsonb_array_elements(p_items) AS item
+  FOR v_item IN
+    SELECT *
+    FROM jsonb_to_recordset(p_items) AS x(producto_id UUID, cantidad INTEGER)
   LOOP
     -- Obtener precio del producto
     SELECT precio INTO v_precio_producto
     FROM public.productos
-    WHERE id = (v_item->>'producto_id')::UUID;
+    WHERE id = v_item.producto_id;
 
     -- Calcular subtotal
-    v_subtotal := (v_item->>'cantidad')::INTEGER * v_precio_producto;
+    v_subtotal := v_item.cantidad * v_precio_producto;
     v_total := v_total + v_subtotal;
 
     -- Insertar item de factura
@@ -153,17 +156,17 @@ BEGIN
       subtotal
     ) VALUES (
       v_factura_id,
-      (v_item->>'producto_id')::UUID,
-      (v_item->>'cantidad')::INTEGER,
+      v_item.producto_id,
+      v_item.cantidad,
       v_precio_producto,
       v_subtotal
     );
 
     -- Descontar stock del producto
     UPDATE public.productos
-    SET cantidad = cantidad - (v_item->>'cantidad')::INTEGER,
+    SET cantidad = cantidad - v_item.cantidad,
         updated_at = TIMEZONE('utc', NOW())
-    WHERE id = (v_item->>'producto_id')::UUID
+    WHERE id = v_item.producto_id
     AND user_id = p_user_id;
 
     -- Registrar en historial de inventario
@@ -177,15 +180,15 @@ BEGIN
       user_id
     )
     SELECT 
-      (v_item->>'producto_id')::UUID,
+      v_item.producto_id,
       'salida',
-      cantidad + (v_item->>'cantidad')::INTEGER,
+      cantidad + v_item.cantidad,
       cantidad,
-      -(v_item->>'cantidad')::INTEGER,
+      -(v_item.cantidad),
       format('Venta - Factura %s', v_factura_id),
       p_user_id
     FROM public.productos
-    WHERE id = (v_item->>'producto_id')::UUID;
+    WHERE id = v_item.producto_id;
   END LOOP;
 
   -- Actualizar total de la factura
