@@ -80,6 +80,16 @@ export function getSupabaseActionHint(err: unknown): string | null {
   const n = normalizeSupabaseError(err)
   const msg = `${n.message} ${n.details ?? ''} ${n.hint ?? ''}`.toLowerCase()
 
+  // Schema no expuesto en PostgREST (config del proyecto)
+  // Ej: "Invalid schema: public — Código: PGRST106 — Hint: Only the following schemas are exposed: graphql_public"
+  if (n.code === 'PGRST106' || msg.includes('invalid schema')) {
+    return (
+      'Tu proyecto de Supabase NO está exponiendo el schema `public` a la API REST (PostgREST). ' +
+      'Solución: Supabase Dashboard → Settings → API → "Exposed schemas" → agrega `public` (y guarda). ' +
+      'Después recarga la app e intenta de nuevo.'
+    )
+  }
+
   // 404 en PostgREST suele significar "tabla no accesible" (no existe o sin permisos)
   if (n.status === 404 || msg.includes('404') || msg.includes('not found')) {
     return (
