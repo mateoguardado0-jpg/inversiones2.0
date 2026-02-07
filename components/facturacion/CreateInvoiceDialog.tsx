@@ -232,7 +232,7 @@ export default function CreateInvoiceDialog({
       if (functionError) {
         console.error('Error en RPC crear_factura:', functionError)
         const formattedError = formatSupabaseError(functionError)
-        throw new Error(formattedError.message)
+        throw new Error(formattedError)
       }
 
       console.log('Respuesta de crear_factura:', data)
@@ -562,6 +562,11 @@ export default function CreateInvoiceDialog({
 
             {/* Total y acciones */}
             <div className="border-t p-4 space-y-3 bg-gray-50 dark:bg-gray-900/50">
+              {error && (
+                <div className="p-3 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400 rounded-md whitespace-pre-line">
+                  {error}
+                </div>
+              )}
               <div className="flex justify-between items-center text-lg">
                 <span className="font-semibold">Total:</span>
                 <span className="text-3xl font-bold text-primary">
@@ -582,7 +587,10 @@ export default function CreateInvoiceDialog({
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => setShowPreview(true)}
+                    onClick={() => {
+                      console.log('Vista previa click')
+                      setShowPreview(true)
+                    }}
                     disabled={loading}
                     className="flex items-center gap-2"
                   >

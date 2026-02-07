@@ -204,7 +204,3 @@ GRANT EXECUTE ON FUNCTION crear_factura(UUID, JSONB) TO anon, authenticated, ser
 -- Otorgar permisos en las tablas
 GRANT ALL ON public.facturas TO anon, authenticated, service_role;
 GRANT ALL ON public.factura_items TO anon, authenticated, service_role;
-
--- Asegurar que las tablas están en el schema public
-ALTER TABLE IF EXISTS facturas SET SCHEMA public;
-ALTER TABLE IF EXISTS factura_items SET SCHEMA public;
