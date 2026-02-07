@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
-import { X, Trash2, Plus, Minus, ShoppingCart, Barcode, Edit2, FileText } from 'lucide-react'
+import { X, Trash2, Plus, Minus, ShoppingCart, Barcode, Edit2, FileText, CheckCircle2 } from 'lucide-react'
 import SmartProductSearch from './SmartProductSearch'
 import InvoicePreview from './InvoicePreview'
 
@@ -62,6 +62,8 @@ export default function CreateInvoiceDialog({
   const [editQuantity, setEditQuantity] = useState<number>(1)
   const [showPreview, setShowPreview] = useState(false)
   const [createdInvoiceId, setCreatedInvoiceId] = useState<string | null>(null)
+  const [saleSuccessOpen, setSaleSuccessOpen] = useState(false)
+  const [saleSuccessTotal, setSaleSuccessTotal] = useState<number | null>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const supabase = createClient()
 
@@ -248,7 +250,9 @@ export default function CreateInvoiceDialog({
       // Guardar ID de factura creada para mostrar preview
       if (data[0].factura_id) {
         setCreatedInvoiceId(data[0].factura_id)
-        setShowPreview(true)
+        // Mostrar confirmación de éxito (y permitir abrir vista previa)
+        setSaleSuccessTotal(typeof data[0].total === 'number' ? data[0].total : calculateTotal())
+        setSaleSuccessOpen(true)
         // Mostrar mensaje de éxito
         setError(null)
         console.log('Factura creada exitosamente:', data[0].factura_id)
@@ -300,9 +304,14 @@ export default function CreateInvoiceDialog({
     return `FAC-PREVIEW`
   }
 
+  const formatInvoiceNumberById = (id: string) => {
+    return `FAC-${id.substring(0, 8).toUpperCase()}`
+  }
+
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-7xl max-h-[95vh] p-0 gap-0">
+    <>
+      <Dialog open={open} onOpenChange={handleClose}>
+        <DialogContent className="max-w-7xl max-h-[95vh] p-0 gap-0">
         <DialogHeader className="px-6 pt-6 pb-4 border-b">
           <DialogTitle className="text-2xl flex items-center gap-2">
             <ShoppingCart className="h-6 w-6" />
@@ -611,7 +620,7 @@ export default function CreateInvoiceDialog({
             </div>
           </div>
         </div>
-      </DialogContent>
+        </DialogContent>
 
       {/* Vista previa de factura */}
       {showPreview && (
@@ -632,6 +641,58 @@ export default function CreateInvoiceDialog({
           onSave={createdInvoiceId ? handlePreviewClose : undefined}
         />
       )}
-    </Dialog>
+      </Dialog>
+
+      {/* Modal de éxito */}
+      <Dialog open={saleSuccessOpen} onOpenChange={setSaleSuccessOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle2 className="h-5 w-5 text-green-600" />
+              Compra registrada con éxito
+            </DialogTitle>
+            <DialogDescription>
+              La venta se guardó y el inventario se actualizó.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Factura</span>
+              <span className="font-medium">
+                {createdInvoiceId ? formatInvoiceNumberById(createdInvoiceId) : '-'}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Total</span>
+              <span className="font-semibold text-green-700">
+                ${((saleSuccessTotal ?? calculateTotal()) || 0).toFixed(2)}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex gap-2 justify-end">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setSaleSuccessOpen(false)
+                setShowPreview(true)
+              }}
+              disabled={!createdInvoiceId}
+            >
+              Ver comprobante
+            </Button>
+            <Button
+              onClick={() => {
+                setSaleSuccessOpen(false)
+                handlePreviewClose()
+              }}
+            >
+              Listo
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }

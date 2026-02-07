@@ -208,7 +208,7 @@ export default function InvoicePreview({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 print:p-0 print:bg-white">
+    <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center p-4 print:p-0 print:bg-white">
       <Card className="w-full max-w-4xl bg-white print:shadow-none print:border-0">
         <div className="p-6 print:p-8">
           {/* Controles (ocultos al imprimir) */}
