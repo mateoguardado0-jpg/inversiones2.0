@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Edit, Trash2, Plus, Search } from 'lucide-react'
+import { Edit, Trash2, Plus, Search, AlertTriangle, Calendar } from 'lucide-react'
 import EditProductDialog from './EditProductDialog'
 
 interface Product {
@@ -19,6 +19,7 @@ interface Product {
   proveedor: string | null
   codigo_barras: string | null
   ubicacion: string | null
+  fecha_vencimiento: string | null
   estado: string
   created_at: string
   updated_at: string
@@ -90,6 +91,34 @@ export default function InventoryHistory() {
   useEffect(() => {
     fetchData()
   }, [fetchData])
+
+  // Función para determinar el estado de la fecha de vencimiento
+  const getVencimientoStatus = (fechaVencimiento: string | null) => {
+    if (!fechaVencimiento) return null
+    
+    const hoy = new Date()
+    hoy.setHours(0, 0, 0, 0)
+    const vencimiento = new Date(fechaVencimiento)
+    vencimiento.setHours(0, 0, 0, 0)
+    const diasRestantes = Math.ceil((vencimiento.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24))
+    
+    if (diasRestantes < 0) {
+      return { status: 'vencido', dias: Math.abs(diasRestantes), color: 'text-red-600 dark:text-red-400', bg: 'bg-red-50 dark:bg-red-900/20' }
+    } else if (diasRestantes <= 7) {
+      return { status: 'proximo', dias: diasRestantes, color: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-50 dark:bg-orange-900/20' }
+    } else if (diasRestantes <= 30) {
+      return { status: 'advertencia', dias: diasRestantes, color: 'text-yellow-600 dark:text-yellow-400', bg: 'bg-yellow-50 dark:bg-yellow-900/20' }
+    } else {
+      return { status: 'ok', dias: diasRestantes, color: 'text-green-600 dark:text-green-400', bg: 'bg-green-50 dark:bg-green-900/20' }
+    }
+  }
+
+  // Función para formatear fecha
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return '-'
+    const date = new Date(dateString)
+    return date.toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric' })
+  }
 
   useEffect(() => {
     // Filtrar productos con búsqueda inteligente
@@ -172,7 +201,7 @@ export default function InventoryHistory() {
     return labels[tipo] || tipo
   }
 
-  const formatDate = (dateString: string) => {
+  const formatDateTime = (dateString: string) => {
     const date = new Date(dateString)
     return date.toLocaleString('es-ES', {
       year: 'numeric',
@@ -249,6 +278,7 @@ export default function InventoryHistory() {
                       <th className="text-left p-3 font-medium">Categoría</th>
                       <th className="text-left p-3 font-medium">Cantidad</th>
                       <th className="text-left p-3 font-medium">Precio</th>
+                      <th className="text-left p-3 font-medium">Vencimiento</th>
                       <th className="text-left p-3 font-medium">Estado</th>
                       <th className="text-left p-3 font-medium">Acciones</th>
                     </tr>
@@ -271,6 +301,44 @@ export default function InventoryHistory() {
                           {product.cantidad} {product.unidad_medida}
                         </td>
                         <td className="p-3">${product.precio.toFixed(2)}</td>
+                        <td className="p-3">
+                          {product.fecha_vencimiento ? (
+                            <div className="flex items-center gap-2">
+                              <Calendar className="h-4 w-4 text-muted-foreground" />
+                              <div>
+                                <div className="text-sm">{formatDate(product.fecha_vencimiento)}</div>
+                                {(() => {
+                                  const vencimientoStatus = getVencimientoStatus(product.fecha_vencimiento)
+                                  if (!vencimientoStatus) return null
+                                  return (
+                                    <div className={`text-xs ${vencimientoStatus.color} flex items-center gap-1 mt-1`}>
+                                      {vencimientoStatus.status === 'vencido' && (
+                                        <>
+                                          <AlertTriangle className="h-3 w-3" />
+                                          <span>Vencido hace {vencimientoStatus.dias} {vencimientoStatus.dias === 1 ? 'día' : 'días'}</span>
+                                        </>
+                                      )}
+                                      {vencimientoStatus.status === 'proximo' && (
+                                        <>
+                                          <AlertTriangle className="h-3 w-3" />
+                                          <span>Vence en {vencimientoStatus.dias} {vencimientoStatus.dias === 1 ? 'día' : 'días'}</span>
+                                        </>
+                                      )}
+                                      {vencimientoStatus.status === 'advertencia' && (
+                                        <span>Vence en {vencimientoStatus.dias} días</span>
+                                      )}
+                                      {vencimientoStatus.status === 'ok' && (
+                                        <span className="text-muted-foreground">{vencimientoStatus.dias} días restantes</span>
+                                      )}
+                                    </div>
+                                  )
+                                })()}
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">-</span>
+                          )}
+                        </td>
                         <td className="p-3">
                           <span
                             className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -344,7 +412,7 @@ export default function InventoryHistory() {
                       return (
                         <tr key={item.id} className="border-b hover:bg-muted/50">
                           <td className="p-3 text-sm">
-                            {formatDate(item.created_at)}
+                            {formatDateTime(item.created_at)}
                           </td>
                           <td className="p-3">
                             {producto?.nombre || 'Producto eliminado'}

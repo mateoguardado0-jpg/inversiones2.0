@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS productos (
   proveedor TEXT,
   codigo_barras TEXT,
   ubicacion TEXT,
+  fecha_vencimiento DATE,
   estado TEXT DEFAULT 'activo' CHECK (estado IN ('activo', 'inactivo', 'agotado')),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,

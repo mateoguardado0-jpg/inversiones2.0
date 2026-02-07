@@ -13,6 +13,8 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Select } from '@/components/ui/select'
+import { SI_UNITS, getUnitsByCategory } from '@/lib/si-units'
 
 interface Product {
   id: string
@@ -25,6 +27,7 @@ interface Product {
   proveedor: string | null
   codigo_barras: string | null
   ubicacion: string | null
+  fecha_vencimiento: string | null
   estado: string
 }
 
@@ -53,6 +56,7 @@ export default function EditProductDialog({
     proveedor: '',
     codigo_barras: '',
     ubicacion: '',
+    fecha_vencimiento: '',
     estado: 'activo',
   })
 
@@ -70,6 +74,7 @@ export default function EditProductDialog({
         proveedor: product.proveedor || '',
         codigo_barras: product.codigo_barras || '',
         ubicacion: product.ubicacion || '',
+        fecha_vencimiento: product.fecha_vencimiento ? product.fecha_vencimiento.split('T')[0] : '',
         estado: product.estado || 'activo',
       })
     }
@@ -95,6 +100,7 @@ export default function EditProductDialog({
           proveedor: formData.proveedor || null,
           codigo_barras: formData.codigo_barras || null,
           ubicacion: formData.ubicacion || null,
+          fecha_vencimiento: formData.fecha_vencimiento || null,
           estado: formData.estado,
         })
         .eq('id', product.id)
@@ -201,15 +207,24 @@ export default function EditProductDialog({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="edit-unidad_medida">Unidad de Medida</Label>
-              <Input
+              <Label htmlFor="edit-unidad_medida">Unidad de Medida (SI)</Label>
+              <Select
                 id="edit-unidad_medida"
                 value={formData.unidad_medida}
                 onChange={(e) =>
                   setFormData({ ...formData, unidad_medida: e.target.value })
                 }
-                placeholder="unidad, kg, litro, etc."
-              />
+              >
+                {Object.entries(getUnitsByCategory()).map(([category, units]) => (
+                  <optgroup key={category} label={category}>
+                    {units.map((unit) => (
+                      <option key={unit.value} value={unit.value}>
+                        {unit.label} {unit.description ? `- ${unit.description}` : ''}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </Select>
             </div>
           </div>
 
@@ -253,20 +268,32 @@ export default function EditProductDialog({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="edit-estado">Estado</Label>
-              <select
-                id="edit-estado"
-                value={formData.estado}
+              <Label htmlFor="edit-fecha_vencimiento">Fecha de Vencimiento</Label>
+              <Input
+                id="edit-fecha_vencimiento"
+                type="date"
+                value={formData.fecha_vencimiento}
                 onChange={(e) =>
-                  setFormData({ ...formData, estado: e.target.value })
+                  setFormData({ ...formData, fecha_vencimiento: e.target.value })
                 }
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-              >
-                <option value="activo">Activo</option>
-                <option value="inactivo">Inactivo</option>
-                <option value="agotado">Agotado</option>
-              </select>
+              />
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-estado">Estado</Label>
+            <select
+              id="edit-estado"
+              value={formData.estado}
+              onChange={(e) =>
+                setFormData({ ...formData, estado: e.target.value })
+              }
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              <option value="activo">Activo</option>
+              <option value="inactivo">Inactivo</option>
+              <option value="agotado">Agotado</option>
+            </select>
           </div>
 
           <DialogFooter>

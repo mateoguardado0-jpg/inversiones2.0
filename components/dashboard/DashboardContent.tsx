@@ -5,8 +5,9 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { User } from '@supabase/supabase-js'
-import { Plus, Edit, Trash2, History, LogOut, Package, Receipt, TrendingUp } from 'lucide-react'
+import { Plus, Edit, Trash2, History, LogOut, Package, Receipt, TrendingUp, Menu } from 'lucide-react'
 import InventoryHistory from '@/components/inventory/InventoryHistory'
 import AddProductDialog from '@/components/inventory/AddProductDialog'
 import FacturacionContent from '@/components/facturacion/FacturacionContent'
@@ -46,6 +47,7 @@ export default function DashboardContent({ user, profile }: DashboardContentProp
   const [activeSection, setActiveSection] = useState<ActiveSection>(initialSection)
   const [addDialogOpen, setAddDialogOpen] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
+  const [menuOpen, setMenuOpen] = useState(false)
 
   // Actualizar sección cuando cambia el parámetro de URL
   useEffect(() => {
@@ -110,64 +112,91 @@ export default function DashboardContent({ user, profile }: DashboardContentProp
           </div>
         </div>
 
-        {/* Barra de Tareas */}
-        <Card className="mb-6">
-          <CardContent className="p-4">
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant={activeSection === 'inventario' ? 'default' : 'outline'}
-                onClick={() => setActiveSection('inventario')}
-                className="flex items-center gap-2"
-              >
-                <History className="h-4 w-4" />
-                Historial
+        {/* Botón de Menú y Menú Lateral */}
+        <div className="mb-6 flex justify-end">
+          <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+            <SheetTrigger asChild>
+              <Button variant="outline" className="flex items-center gap-2">
+                <Menu className="h-4 w-4" />
+                Menú
               </Button>
-              <Button
-                variant={activeSection === 'agregar' ? 'default' : 'outline'}
-                onClick={() => {
-                  setActiveSection('agregar')
-                  setAddDialogOpen(true)
-                }}
-                className="flex items-center gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                Agregar Producto
-              </Button>
-              <Button
-                variant={activeSection === 'editar' ? 'default' : 'outline'}
-                onClick={() => setActiveSection('editar')}
-                className="flex items-center gap-2"
-              >
-                <Edit className="h-4 w-4" />
-                Editar Producto
-              </Button>
-              <Button
-                variant={activeSection === 'eliminar' ? 'default' : 'outline'}
-                onClick={() => setActiveSection('eliminar')}
-                className="flex items-center gap-2"
-              >
-                <Trash2 className="h-4 w-4" />
-                Eliminar Producto
-              </Button>
-              <Button
-                variant={activeSection === 'facturacion' ? 'default' : 'outline'}
-                onClick={() => setActiveSection('facturacion')}
-                className="flex items-center gap-2"
-              >
-                <Receipt className="h-4 w-4" />
-                Facturación
-              </Button>
-              <Button
-                variant={activeSection === 'ventas' ? 'default' : 'outline'}
-                onClick={() => setActiveSection('ventas')}
-                className="flex items-center gap-2"
-              >
-                <TrendingUp className="h-4 w-4" />
-                Reporte de Ventas
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[350px] sm:w-[400px]">
+              <SheetHeader>
+                <SheetTitle>Menú de Navegación</SheetTitle>
+              </SheetHeader>
+              <div className="mt-6 flex flex-col gap-3">
+                <Button
+                  variant={activeSection === 'inventario' ? 'default' : 'outline'}
+                  onClick={() => {
+                    setActiveSection('inventario')
+                    setMenuOpen(false)
+                  }}
+                  className="w-full justify-start flex items-center gap-2"
+                >
+                  <History className="h-4 w-4" />
+                  Historial
+                </Button>
+                <Button
+                  variant={activeSection === 'agregar' ? 'default' : 'outline'}
+                  onClick={() => {
+                    setActiveSection('agregar')
+                    setAddDialogOpen(true)
+                    setMenuOpen(false)
+                  }}
+                  className="w-full justify-start flex items-center gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  Agregar Producto
+                </Button>
+                <Button
+                  variant={activeSection === 'editar' ? 'default' : 'outline'}
+                  onClick={() => {
+                    setActiveSection('editar')
+                    setMenuOpen(false)
+                  }}
+                  className="w-full justify-start flex items-center gap-2"
+                >
+                  <Edit className="h-4 w-4" />
+                  Editar Producto
+                </Button>
+                <Button
+                  variant={activeSection === 'eliminar' ? 'default' : 'outline'}
+                  onClick={() => {
+                    setActiveSection('eliminar')
+                    setMenuOpen(false)
+                  }}
+                  className="w-full justify-start flex items-center gap-2"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Eliminar Producto
+                </Button>
+                <Button
+                  variant={activeSection === 'facturacion' ? 'default' : 'outline'}
+                  onClick={() => {
+                    setActiveSection('facturacion')
+                    setMenuOpen(false)
+                  }}
+                  className="w-full justify-start flex items-center gap-2"
+                >
+                  <Receipt className="h-4 w-4" />
+                  Facturación
+                </Button>
+                <Button
+                  variant={activeSection === 'ventas' ? 'default' : 'outline'}
+                  onClick={() => {
+                    setActiveSection('ventas')
+                    setMenuOpen(false)
+                  }}
+                  className="w-full justify-start flex items-center gap-2"
+                >
+                  <TrendingUp className="h-4 w-4" />
+                  Reporte de Ventas
+                </Button>
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
 
         {/* Contenido Principal */}
         <div className="space-y-6">

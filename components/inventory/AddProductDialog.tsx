@@ -13,6 +13,8 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Select } from '@/components/ui/select'
+import { SI_UNITS, getUnitsByCategory } from '@/lib/si-units'
 
 interface AddProductDialogProps {
   open: boolean
@@ -37,6 +39,7 @@ export default function AddProductDialog({
     proveedor: '',
     codigo_barras: '',
     ubicacion: '',
+    fecha_vencimiento: '',
   })
 
   const supabase = createClient()
@@ -65,6 +68,7 @@ export default function AddProductDialog({
             proveedor: formData.proveedor || null,
             codigo_barras: formData.codigo_barras || null,
             ubicacion: formData.ubicacion || null,
+            fecha_vencimiento: formData.fecha_vencimiento || null,
             user_id: user.id,
           },
         ])
@@ -82,6 +86,7 @@ export default function AddProductDialog({
         proveedor: '',
         codigo_barras: '',
         ubicacion: '',
+        fecha_vencimiento: '',
       })
 
       onProductAdded()
@@ -182,15 +187,24 @@ export default function AddProductDialog({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="unidad_medida">Unidad de Medida</Label>
-              <Input
+              <Label htmlFor="unidad_medida">Unidad de Medida (SI)</Label>
+              <Select
                 id="unidad_medida"
                 value={formData.unidad_medida}
                 onChange={(e) =>
                   setFormData({ ...formData, unidad_medida: e.target.value })
                 }
-                placeholder="unidad, kg, litro, etc."
-              />
+              >
+                {Object.entries(getUnitsByCategory()).map(([category, units]) => (
+                  <optgroup key={category} label={category}>
+                    {units.map((unit) => (
+                      <option key={unit.value} value={unit.value}>
+                        {unit.label} {unit.description ? `- ${unit.description}` : ''}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </Select>
             </div>
           </div>
 
@@ -220,16 +234,30 @@ export default function AddProductDialog({
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="ubicacion">Ubicación</Label>
-            <Input
-              id="ubicacion"
-              value={formData.ubicacion}
-              onChange={(e) =>
-                setFormData({ ...formData, ubicacion: e.target.value })
-              }
-              placeholder="Ubicación en almacén"
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="ubicacion">Ubicación</Label>
+              <Input
+                id="ubicacion"
+                value={formData.ubicacion}
+                onChange={(e) =>
+                  setFormData({ ...formData, ubicacion: e.target.value })
+                }
+                placeholder="Ubicación en almacén"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="fecha_vencimiento">Fecha de Vencimiento</Label>
+              <Input
+                id="fecha_vencimiento"
+                type="date"
+                value={formData.fecha_vencimiento}
+                onChange={(e) =>
+                  setFormData({ ...formData, fecha_vencimiento: e.target.value })
+                }
+              />
+            </div>
           </div>
 
           <DialogFooter>
