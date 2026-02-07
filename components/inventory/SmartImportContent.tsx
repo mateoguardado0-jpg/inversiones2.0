@@ -146,7 +146,7 @@ export default function SmartImportContent() {
         // Buscar producto existente por nombre (case-insensitive)
         const { data: existingProducts } = await supabase
           .from('productos')
-          .select('id, nombre, cantidad')
+          .select('id, nombre, cantidad, precio')
           .eq('user_id', user.id)
           .ilike('nombre', product.nombre)
           .limit(1)

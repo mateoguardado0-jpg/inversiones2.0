@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import {
@@ -64,31 +64,7 @@ export default function CreateInvoiceDialog({
   const searchInputRef = useRef<HTMLInputElement>(null)
   const supabase = createClient()
 
-  useEffect(() => {
-    if (open) {
-      fetchProducts()
-      setTimeout(() => searchInputRef.current?.focus(), 100)
-    }
-  }, [open])
-
-  useEffect(() => {
-    const filtered = products.filter(product => {
-      const matchesSearch = 
-        product.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (product.categoria && product.categoria.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (product.codigo_barras && product.codigo_barras.includes(searchTerm)) ||
-        (product.descripcion && product.descripcion.toLowerCase().includes(searchTerm.toLowerCase()))
-      
-      const notInCart = !items.some(item => item.producto.id === product.id)
-      const isActive = product.estado === 'activo'
-      const hasStock = product.cantidad > 0
-      
-      return matchesSearch && notInCart && isActive && hasStock
-    })
-    setFilteredProducts(filtered.slice(0, 12))
-  }, [searchTerm, products, items])
-
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     setLoading(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
@@ -109,7 +85,31 @@ export default function CreateInvoiceDialog({
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase])
+
+  useEffect(() => {
+    if (open) {
+      fetchProducts()
+      setTimeout(() => searchInputRef.current?.focus(), 100)
+    }
+  }, [open, fetchProducts])
+
+  useEffect(() => {
+    const filtered = products.filter(product => {
+      const matchesSearch = 
+        product.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (product.categoria && product.categoria.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (product.codigo_barras && product.codigo_barras.includes(searchTerm)) ||
+        (product.descripcion && product.descripcion.toLowerCase().includes(searchTerm.toLowerCase()))
+      
+      const notInCart = !items.some(item => item.producto.id === product.id)
+      const isActive = product.estado === 'activo'
+      const hasStock = product.cantidad > 0
+      
+      return matchesSearch && notInCart && isActive && hasStock
+    })
+    setFilteredProducts(filtered.slice(0, 12))
+  }, [searchTerm, products, items])
 
   const handleAddProduct = (product: Product) => {
     const existingItem = items.find(item => item.producto.id === product.id)

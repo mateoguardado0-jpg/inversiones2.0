@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
@@ -46,9 +46,32 @@ export default function SmartProductSearch({
   const suggestionsRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
 
+  const fetchProducts = useCallback(async () => {
+    setLoading(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { data, error } = await supabase
+        .from('productos')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('estado', 'activo')
+        .gt('cantidad', 0)
+        .order('nombre', { ascending: true })
+
+      if (error) throw error
+      setProducts(data || [])
+    } catch (error) {
+      console.error('Error al cargar productos:', error)
+    } finally {
+      setLoading(false)
+    }
+  }, [supabase])
+
   useEffect(() => {
     fetchProducts()
-  }, [])
+  }, [fetchProducts])
 
   useEffect(() => {
     if (searchTerm.length >= 1) {
@@ -83,29 +106,6 @@ export default function SmartProductSearch({
       setShowSuggestions(false)
     }
   }, [searchTerm, products, excludeProductIds])
-
-  const fetchProducts = async () => {
-    setLoading(true)
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-
-      const { data, error } = await supabase
-        .from('productos')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('estado', 'activo')
-        .gt('cantidad', 0)
-        .order('nombre', { ascending: true })
-
-      if (error) throw error
-      setProducts(data || [])
-    } catch (error) {
-      console.error('Error al cargar productos:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const handleSelect = (product: Product) => {
     onSelectProduct(product)

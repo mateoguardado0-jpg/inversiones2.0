@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -35,28 +35,7 @@ export default function ProductSearch({ onSelectProduct, excludeProductIds = [] 
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([])
   const supabase = createClient()
 
-  useEffect(() => {
-    fetchProducts()
-  }, [])
-
-  useEffect(() => {
-    // Filtrar productos por término de búsqueda y excluir productos ya agregados
-    const filtered = products.filter(product => {
-      const matchesSearch = 
-        product.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (product.categoria && product.categoria.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (product.descripcion && product.descripcion.toLowerCase().includes(searchTerm.toLowerCase()))
-      
-      const notExcluded = !excludeProductIds.includes(product.id)
-      const isActive = product.estado === 'activo'
-      const hasStock = product.cantidad > 0
-      
-      return matchesSearch && notExcluded && isActive && hasStock
-    })
-    setFilteredProducts(filtered)
-  }, [searchTerm, products, excludeProductIds])
-
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     setLoading(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
@@ -77,7 +56,28 @@ export default function ProductSearch({ onSelectProduct, excludeProductIds = [] 
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase])
+
+  useEffect(() => {
+    fetchProducts()
+  }, [fetchProducts])
+
+  useEffect(() => {
+    // Filtrar productos por término de búsqueda y excluir productos ya agregados
+    const filtered = products.filter(product => {
+      const matchesSearch = 
+        product.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (product.categoria && product.categoria.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (product.descripcion && product.descripcion.toLowerCase().includes(searchTerm.toLowerCase()))
+      
+      const notExcluded = !excludeProductIds.includes(product.id)
+      const isActive = product.estado === 'activo'
+      const hasStock = product.cantidad > 0
+      
+      return matchesSearch && notExcluded && isActive && hasStock
+    })
+    setFilteredProducts(filtered)
+  }, [searchTerm, products, excludeProductIds])
 
   const handleSelect = (product: Product) => {
     onSelectProduct(product)
